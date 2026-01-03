@@ -63,8 +63,10 @@
   <xacro:include filename="accessories/lidar_3d.urdf.xacro" />
   <xacro:if value="$(optenv WARTHOG_LIDAR_3D 1)">
     <xacro:lidar_3d prefix="lidar_3d" parent_link="top_chassis_link">
-      <origin xyz="$(optenv WARTHOG_LIDAR_3D_OFFSET 0.0 0.0 0.1)" 
-              rpy="$(optenv WARTHOG_LIDAR_3D_RPY 0 0 0)" />
+      <!-- Intentional ±5% error in pose for sensor calibration testing -->
+      <!-- Original: xyz="0.0 0.0 0.1" rpy="0 0 0" -->
+      <origin xyz="$(optenv WARTHOG_LIDAR_3D_OFFSET 0.0 0.005 0.105)" 
+              rpy="$(optenv WARTHOG_LIDAR_3D_RPY 0.0262 -0.0175 0.0349)" />
     </xacro:lidar_3d>
   </xacro:if>
 
