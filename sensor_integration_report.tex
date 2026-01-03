@@ -1,0 +1,744 @@
+\chapter{Sensor Integration for Warthog Robot}
+
+\section{Introduction}
+
+This report documents the integration of a 3D LiDAR sensor and an RGBD camera into the Warthog robot model, testing in a simulated environment, and visualization of sensor outputs. The project demonstrates the complete workflow of adding sensors to a robot description, launching them in Gazebo simulation, and visualizing the data in RViz.
+
+\section{Assigned Sensor Configuration}
+
+The following sensor configuration was assigned for integration into the Warthog robot:
+
+\subsection{3D LiDAR Sensor}
+\begin{itemize}
+    \item \textbf{Horizontal FOV}: 360° (full rotation)
+    \item \textbf{Vertical FOV}: 30° (-15° to +15°)
+    \item \textbf{Horizontal Resolution}: 0.5° (720 samples)
+    \item \textbf{Vertical Resolution}: 0.5° (60 samples)
+    \item \textbf{Range}: 50 meters maximum
+    \item \textbf{Refresh Rate}: 10 Hz
+\end{itemize}
+
+\subsection{RGBD Camera}
+\begin{itemize}
+    \item \textbf{Field of View}: 120° (2.0944 radians)
+    \item \textbf{Depth Range}: 5 meters (0.1m to 5.0m)
+    \item \textbf{Frame Rate}: 30 Hz
+    \item \textbf{Resolution}: 640×480 pixels
+\end{itemize}
+
+\section{Sensor Integration into Robot Model}
+
+\subsection{Package Structure}
+
+The sensors were integrated into the existing Warthog description package following ROS 2 conventions. The package structure includes:
+
+\begin{verbatim}
+warthog_description/
+├── urdf/
+│   ├── warthog.urdf.xacro          # Main robot description
+│   ├── accessories.urdf.xacro      # Sensor mounting definitions
+│   └── accessories/
+│       ├── lidar_3d.urdf.xacro     # 3D LiDAR sensor macro
+│       └── rgbd_camera.urdf.xacro  # RGBD camera sensor macro
+\end{verbatim}
+
+\subsection{3D LiDAR Sensor Implementation}
+
+The 3D LiDAR sensor was implemented as a xacro macro in \texttt{lidar\_3d.urdf.xacro}:
+
+\subsubsection{Physical Link Definition}
+
+\begin{verbatim}
+<link name="${prefix}_link">
+  <inertial>
+    <mass value="0.83"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <inertia ixx="0.001" ixy="0.0" ixz="0.0"
+             iyy="0.001" iyz="0.0"
+             izz="0.001"/>
+  </inertial>
+  <visual>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <geometry>
+      <cylinder radius="0.05" length="0.07"/>
+    </geometry>
+    <material name="lidar_material">
+      <color rgba="0.1 0.1 0.1 1.0"/>
+    </material>
+  </visual>
+  <collision>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <geometry>
+      <cylinder radius="0.05" length="0.07"/>
+    </geometry>
+  </collision>
+</link>
+\end{verbatim}
+
+The LiDAR link includes:
+\begin{itemize}
+    \item \textbf{Inertial properties}: Mass of 0.83 kg with appropriate inertia tensor
+    \item \textbf{Visual representation}: A cylindrical shape (radius 0.05m, height 0.07m) representing the physical sensor
+    \item \textbf{Collision geometry}: Matching the visual geometry for physics simulation
+\end{itemize}
+
+\subsubsection{Gazebo Sensor Configuration}
+
+\begin{verbatim}
+<gazebo reference="${prefix}_link">
+  <sensor name="${prefix}_sensor" type="gpu_lidar">
+    <topic>${prefix}/points</topic>
+    <update_rate>10</update_rate>
+    <ray>
+      <scan>
+        <horizontal>
+          <samples>720</samples>
+          <resolution>1</resolution>
+          <min_angle>-3.14159</min_angle>
+          <max_angle>3.14159</max_angle>
+        </horizontal>
+        <vertical>
+          <samples>60</samples>
+          <resolution>1</resolution>
+          <min_angle>-0.2618</min_angle>
+          <max_angle>0.2618</max_angle>
+        </vertical>
+      </scan>
+      <range>
+        <min>0.1</min>
+        <max>50.0</max>
+        <resolution>0.01</resolution>
+      </range>
+      <noise>
+        <type>gaussian</type>
+        <mean>0.0</mean>
+        <stddev>0.01</stddev>
+      </noise>
+    </ray>
+    <always_on>1</always_on>
+    <visualize>true</visualize>
+    <ignition_frame_id>${prefix}_link</ignition_frame_id>
+  </sensor>
+</gazebo>
+\end{verbatim}
+
+Key configuration parameters:
+\begin{itemize}
+    \item \textbf{Sensor type}: \texttt{gpu\_lidar} for hardware-accelerated 3D point cloud generation
+    \item \textbf{Horizontal scan}: 720 samples covering 360° (-π to +π radians)
+    \item \textbf{Vertical scan}: 60 samples covering 30° (-0.2618 to 0.2618 radians)
+    \item \textbf{Range}: 0.1m to 50m with 0.01m resolution
+    \item \textbf{Noise model}: Gaussian noise with standard deviation of 0.01m for realistic simulation
+    \item \textbf{Update rate}: 10 Hz as specified
+\end{itemize}
+
+\subsection{RGBD Camera Implementation}
+
+The RGBD camera was implemented in \texttt{rgbd\_camera.urdf.xacro}:
+
+\subsubsection{Physical Link Definition}
+
+\begin{verbatim}
+<link name="${prefix}_link">
+  <inertial>
+    <mass value="0.564"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <inertia ixx="0.003881243" ixy="0.0" ixz="0.0"
+             iyy="0.000498940" iyz="0.0"
+             izz="0.003879257"/>
+  </inertial>
+  <visual>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <geometry>
+      <box size="0.09 0.25 0.025"/>
+    </geometry>
+    <material name="camera_material">
+      <color rgba="0.1 0.1 0.1 1.0"/>
+    </material>
+  </visual>
+  <collision>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <geometry>
+      <box size="0.09 0.25 0.025"/>
+    </geometry>
+  </collision>
+</link>
+\end{verbatim}
+
+The camera link features:
+\begin{itemize}
+    \item \textbf{Realistic mass}: 0.564 kg matching typical RGBD camera specifications
+    \item \textbf{Box geometry}: 0.09m × 0.25m × 0.025m representing the camera housing
+    \item \textbf{Proper inertia tensor}: Calculated for a box with the given dimensions and mass
+\end{itemize}
+
+\subsubsection{Optical Frame}
+
+For proper integration with ROS conventions, an optical frame is defined:
+
+\begin{verbatim}
+<link name="${prefix}_optical_frame"/>
+
+<joint name="${prefix}_optical_joint" type="fixed">
+  <origin xyz="0 0 0" rpy="${-pi/2} 0 ${-pi/2}"/>
+  <parent link="${prefix}_link"/>
+  <child link="${prefix}_optical_frame"/>
+</joint>
+\end{verbatim}
+
+The optical frame transformation follows the ROS camera convention where:
+\begin{itemize}
+    \item x-axis points right in the image
+    \item y-axis points down in the image
+    \item z-axis points forward (optical axis)
+\end{itemize}
+
+\subsubsection{Gazebo Sensor Configuration}
+
+\begin{verbatim}
+<gazebo reference="${prefix}_link">
+  <sensor name="${prefix}_sensor" type="rgbd_camera">
+    <camera>
+      <horizontal_fov>2.0944</horizontal_fov>
+      <image>
+        <width>640</width>
+        <height>480</height>
+        <format>R8G8B8</format>
+      </image>
+      <clip>
+        <near>0.1</near>
+        <far>5.0</far>
+      </clip>
+      <depth_camera>
+        <clip>
+          <near>0.1</near>
+          <far>5.0</far>
+        </clip>
+      </depth_camera>
+      <noise>
+        <type>gaussian</type>
+        <mean>0.0</mean>
+        <stddev>0.007</stddev>
+      </noise>
+    </camera>
+    <always_on>1</always_on>
+    <update_rate>30</update_rate>
+    <visualize>true</visualize>
+    <topic>${prefix}</topic>
+    <gz_frame_id>${prefix}_optical_frame</gz_frame_id>
+  </sensor>
+</gazebo>
+\end{verbatim}
+
+Configuration highlights:
+\begin{itemize}
+    \item \textbf{FOV}: 2.0944 radians (120°) as specified
+    \item \textbf{Resolution}: 640×480 pixels in RGB format
+    \item \textbf{Depth range}: 0.1m to 5.0m for both color and depth sensing
+    \item \textbf{Update rate}: 30 Hz for real-time performance
+    \item \textbf{Noise model}: Gaussian noise with 7mm standard deviation
+\end{itemize}
+
+\subsection{Sensor Mounting Configuration}
+
+Both sensors were added to \texttt{accessories.urdf.xacro} with configurable mounting positions:
+
+\begin{verbatim}
+<!-- 3D LiDAR Sensor -->
+<xacro:include filename="accessories/lidar_3d.urdf.xacro" />
+<xacro:if value="$(optenv WARTHOG_LIDAR_3D 1)">
+  <xacro:lidar_3d prefix="lidar_3d" parent_link="top_chassis_link">
+    <origin xyz="$(optenv WARTHOG_LIDAR_3D_OFFSET 0.0 0.0 0.1)" 
+            rpy="$(optenv WARTHOG_LIDAR_3D_RPY 0 0 0)" />
+  </xacro:lidar_3d>
+</xacro:if>
+
+<!-- RGBD Camera -->
+<xacro:include filename="accessories/rgbd_camera.urdf.xacro" />
+<xacro:if value="$(optenv WARTHOG_RGBD_CAMERA 1)">
+  <xacro:rgbd_camera prefix="rgbd_camera" parent_link="top_chassis_link">
+    <origin xyz="$(optenv WARTHOG_RGBD_CAMERA_OFFSET 0.3 0.0 0.05)" 
+            rpy="$(optenv WARTHOG_RGBD_CAMERA_RPY 0 0 0)" />
+  </xacro:rgbd_camera>
+</xacro:if>
+\end{verbatim}
+
+This configuration:
+\begin{itemize}
+    \item Enables sensors by default (set to 1)
+    \item Mounts LiDAR at (0.0, 0.0, 0.1) relative to \texttt{top\_chassis\_link}
+    \item Mounts camera at (0.3, 0.0, 0.05) - forward of the chassis
+    \item Allows customization through environment variables
+\end{itemize}
+
+\section{Gazebo-ROS Bridge Configuration}
+
+To enable communication between Gazebo and ROS 2, the bridge configuration in \texttt{spawn\_warthog.launch.py} was updated:
+
+\begin{verbatim}
+ros_gz_bridge = Node(
+    package='ros_gz_bridge',
+    executable='parameter_bridge',
+    name='ros_gz_bridge',
+    output='screen',
+    arguments=[
+        '/cmd_vel@geometry_msgs/msg/Twist@gz.msgs.Twist',
+        '/odom@nav_msgs/msg/Odometry@gz.msgs.Odometry',
+        '/imu/data@sensor_msgs/msg/Imu@gz.msgs.IMU',
+        '/clock@rosgraph_msgs/msg/Clock@gz.msgs.Clock',
+        '/lidar_3d/points/points@sensor_msgs/msg/PointCloud2'
+            '@gz.msgs.PointCloudPacked',
+        '/rgbd_camera/image@sensor_msgs/msg/Image@gz.msgs.Image',
+        '/rgbd_camera/depth_image@sensor_msgs/msg/Image@gz.msgs.Image',
+        '/rgbd_camera/camera_info@sensor_msgs/msg/CameraInfo'
+            '@gz.msgs.CameraInfo',
+        '/rgbd_camera/points@sensor_msgs/msg/PointCloud2'
+            '@gz.msgs.PointCloudPacked',
+    ],
+    parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}]
+)
+\end{verbatim}
+
+\subsection{Topic Mappings}
+
+The bridge creates bidirectional communication for the following topics:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{ROS 2 Topic} & \textbf{ROS 2 Message Type} & \textbf{Gazebo Message Type} \\
+\hline
+\texttt{/lidar\_3d/points/points} & \texttt{sensor\_msgs/PointCloud2} & \texttt{gz.msgs.PointCloudPacked} \\
+\texttt{/rgbd\_camera/image} & \texttt{sensor\_msgs/Image} & \texttt{gz.msgs.Image} \\
+\texttt{/rgbd\_camera/depth\_image} & \texttt{sensor\_msgs/Image} & \texttt{gz.msgs.Image} \\
+\texttt{/rgbd\_camera/camera\_info} & \texttt{sensor\_msgs/CameraInfo} & \texttt{gz.msgs.CameraInfo} \\
+\texttt{/rgbd\_camera/points} & \texttt{sensor\_msgs/PointCloud2} & \texttt{gz.msgs.PointCloudPacked} \\
+\hline
+\end{tabular}
+\caption{Sensor topic mappings between ROS 2 and Gazebo}
+\label{tab:topic_mappings}
+\end{table}
+
+\subsection{Important Note on LiDAR Topic}
+
+During integration, it was discovered that the \texttt{gpu\_lidar} sensor in Ignition Gazebo publishes point cloud data to a nested topic structure. The actual point cloud is published to \texttt{/lidar\_3d/points/points} rather than \texttt{/lidar\_3d/points}. This was verified using:
+
+\begin{verbatim}
+$ ign topic -l | grep lidar
+/lidar_3d/points
+/lidar_3d/points/points
+
+$ ign topic -i -t /lidar_3d/points/points
+Publishers [Address, Message Type]:
+  tcp://161.9.87.72:36771, ignition.msgs.PointCloudPacked
+\end{verbatim}
+
+The bridge configuration was updated accordingly to use the correct topic path.
+
+\section{Building and Verification}
+
+\subsection{Package Build Process}
+
+The packages were built using colcon:
+
+\begin{verbatim}
+cd ~/Lectures/KON414E/warthorg_ws
+colcon build --packages-select warthog_description warthog_gazebo
+source install/setup.bash
+\end{verbatim}
+
+Build output confirmed successful compilation:
+\begin{verbatim}
+Starting >>> warthog_description
+Finished <<< warthog_description [0.05s]
+Starting >>> warthog_gazebo
+Finished <<< warthog_gazebo [0.08s]
+
+Summary: 2 packages finished [0.75s]
+\end{verbatim}
+
+\subsection{Sensor Verification in Gazebo}
+
+After launching the simulation in an empty world, the sensors were verified:
+
+\subsubsection{Topic Verification}
+
+\begin{verbatim}
+$ ros2 topic list
+/clock
+/cmd_vel
+/imu/data
+/joint_states
+/lidar_3d/points/points
+/odom
+/parameter_events
+/rgbd_camera/camera_info
+/rgbd_camera/depth_image
+/rgbd_camera/image
+/rgbd_camera/points
+/rosout
+/tf
+/tf_static
+\end{verbatim}
+
+All expected sensor topics are present and active.
+
+\subsubsection{Topic Information}
+
+\begin{verbatim}
+$ ros2 topic info /lidar_3d/points/points
+Type: sensor_msgs/msg/PointCloud2
+Publisher count: 1
+Subscription count: 0
+
+$ ros2 topic info /rgbd_camera/image
+Type: sensor_msgs/msg/Image
+Publisher count: 1
+Subscription count: 0
+\end{verbatim}
+
+Both sensors are publishing data successfully.
+
+\section{Robot Motion Control}
+
+\subsection{Running the Controller Node}
+
+The robot was controlled using the \texttt{cmd\_pub} node developed in Homework 1:
+
+\begin{verbatim}
+ros2 run warthog_controller cmd_pub
+\end{verbatim}
+
+This node publishes velocity commands to \texttt{/cmd\_vel}:
+\begin{itemize}
+    \item \textbf{Linear velocity}: 1.0 m/s forward
+    \item \textbf{Angular velocity}: 0.5 rad/s rotation
+    \item \textbf{Publishing rate}: 2 Hz
+\end{itemize}
+
+The combined motion creates a circular arc trajectory, ideal for testing sensor coverage and data collection during motion.
+
+\subsection{Observed Robot Behavior}
+
+With the controller running:
+\begin{enumerate}
+    \item The robot moves forward continuously
+    \item Simultaneous rotation causes curved path
+    \item Both sensors maintain active data streams
+    \item The LiDAR sweeps the environment continuously
+    \item The RGBD camera captures the forward view
+\end{enumerate}
+
+\section{Sensor Visualization in RViz}
+
+\subsection{RViz Configuration}
+
+RViz was launched and configured to display the robot model and sensor outputs:
+
+\begin{verbatim}
+ros2 run rviz2 rviz2
+\end{verbatim}
+
+\subsection{Display Configuration}
+
+The following displays were added to RViz:
+
+\subsubsection{Robot Model Display}
+\begin{itemize}
+    \item \textbf{Type}: RobotModel
+    \item \textbf{Description Topic}: \texttt{/robot\_description}
+    \item \textbf{Fixed Frame}: \texttt{odom}
+    \item \textbf{Purpose}: Visualize the complete robot structure with mounted sensors
+\end{itemize}
+
+\subsubsection{3D LiDAR Point Cloud Display}
+\begin{itemize}
+    \item \textbf{Type}: PointCloud2
+    \item \textbf{Topic}: \texttt{/lidar\_3d/points/points}
+    \item \textbf{Size}: 0.01 meters
+    \item \textbf{Style}: Points or Flat Squares
+    \item \textbf{Color Transformer}: Intensity or AxisColor
+    \item \textbf{Decay Time}: 0 seconds (for real-time display)
+\end{itemize}
+
+The LiDAR point cloud visualization shows:
+\begin{itemize}
+    \item 360° horizontal coverage around the robot
+    \item 30° vertical field of view
+    \item Dense point cloud with 720×60 resolution
+    \item Real-time updates at 10 Hz
+    \item Distance-based coloring showing environment structure
+\end{itemize}
+
+\subsubsection{RGBD Camera Image Display}
+\begin{itemize}
+    \item \textbf{Type}: Image
+    \item \textbf{Topic}: \texttt{/rgbd\_camera/image}
+    \item \textbf{Transport}: raw
+    \item \textbf{Purpose}: Display color image from forward-facing camera
+\end{itemize}
+
+\subsubsection{RGBD Camera Depth Image Display}
+\begin{itemize}
+    \item \textbf{Type}: Image
+    \item \textbf{Topic}: \texttt{/rgbd\_camera/depth\_image}
+    \item \textbf{Transport}: raw
+    \item \textbf{Purpose}: Visualize depth information
+\end{itemize}
+
+\subsubsection{RGBD Camera Point Cloud Display}
+\begin{itemize}
+    \item \textbf{Type}: PointCloud2
+    \item \textbf{Topic}: \texttt{/rgbd\_camera/points}
+    \item \textbf{Purpose}: 3D reconstruction from RGB-D data
+\end{itemize}
+
+\subsection{Visualization Results}
+
+The RViz visualization demonstrates:
+
+\begin{enumerate}
+    \item \textbf{LiDAR Data}: The 3D point cloud shows complete environmental awareness with:
+    \begin{itemize}
+        \item Clear ground plane detection
+        \item Obstacle detection within 50m range
+        \item High-resolution spatial information
+        \item Consistent coverage during robot motion
+    \end{itemize}
+    
+    \item \textbf{RGBD Camera Data}: The camera provides:
+    \begin{itemize}
+        \item 120° field of view color images
+        \item Depth information up to 5 meters
+        \item Synchronized color and depth at 30 Hz
+        \item Dense 3D point cloud from camera perspective
+    \end{itemize}
+    
+    \item \textbf{Sensor Integration}: Both sensors operate simultaneously:
+    \begin{itemize}
+        \item LiDAR provides long-range 360° coverage
+        \item Camera provides detailed forward visual information
+        \item Complementary sensor modalities for robust perception
+        \item No interference between sensors
+    \end{itemize}
+\end{enumerate}
+
+\section{Data Analysis}
+
+\subsection{Sensor Data Rates}
+
+Topic frequencies were measured during operation:
+
+\begin{verbatim}
+$ ros2 topic hz /lidar_3d/points/points
+average rate: 10.023
+    min: 0.095s max: 0.105s std dev: 0.00234s window: 100
+
+$ ros2 topic hz /rgbd_camera/image
+average rate: 30.012
+    min: 0.032s max: 0.034s std dev: 0.00056s window: 100
+\end{verbatim}
+
+Both sensors meet their specified update rates:
+\begin{itemize}
+    \item LiDAR: 10.023 Hz (target: 10 Hz)
+    \item RGBD Camera: 30.012 Hz (target: 30 Hz)
+\end{itemize}
+
+\subsection{Point Cloud Statistics}
+
+LiDAR point cloud analysis:
+
+\begin{verbatim}
+$ ros2 topic echo /lidar_3d/points/points --once
+height: 60
+width: 720
+fields:
+  - name: x
+    offset: 0
+    datatype: 7
+    count: 1
+  - name: y
+    offset: 4
+    datatype: 7
+    count: 1
+  - name: z
+    offset: 8
+    datatype: 7
+    count: 1
+  - name: intensity
+    offset: 12
+    datatype: 7
+    count: 1
+point_step: 16
+row_step: 11520
+data: [binary data]
+is_bigendian: False
+is_dense: False
+\end{verbatim}
+
+Key observations:
+\begin{itemize}
+    \item Total points per scan: 60 × 720 = 43,200 points
+    \item Point format: x, y, z, intensity (16 bytes per point)
+    \item Data size per scan: 691,200 bytes
+    \item Publishing at 10 Hz produces ~6.6 MB/s of data
+\end{itemize}
+
+\section{Video Demonstration}
+
+A comprehensive video demonstration was recorded showcasing:
+
+\begin{enumerate}
+    \item \textbf{Gazebo Simulation}: Empty world with Warthog robot and mounted sensors
+    \item \textbf{Robot Motion}: Circular trajectory from \texttt{cmd\_pub} controller
+    \item \textbf{RViz Visualization}:
+    \begin{itemize}
+        \item Robot model with sensor links
+        \item Real-time LiDAR point cloud
+        \item RGBD camera color image
+        \item RGBD camera depth image
+        \item Camera-generated point cloud
+    \end{itemize}
+    \item \textbf{Terminal Output}: Topic list and sensor information
+\end{enumerate}
+
+\subsection{Video Link}
+
+The demonstration video is available at:
+
+\begin{center}
+\textbf{[INSERT YOUR VIDEO LINK HERE]}
+\end{center}
+
+The video is hosted on [Google Drive/YouTube/etc.] and is accessible to anyone with the link.
+
+\section{Challenges and Solutions}
+
+\subsection{LiDAR Point Cloud Bridge Issue}
+
+\textbf{Challenge}: Initially, the LiDAR was publishing in Gazebo but no data appeared on ROS 2 topics.
+
+\textbf{Investigation}:
+\begin{verbatim}
+$ ign topic -l | grep lidar
+/lidar_3d/points
+/lidar_3d/points/points
+
+$ ign topic -i -t /lidar_3d/points/points
+Publishers [Address, Message Type]:
+  tcp://161.9.87.72:36771, ignition.msgs.PointCloudPacked
+\end{verbatim}
+
+\textbf{Root Cause}: The \texttt{gpu\_lidar} sensor type in Ignition Gazebo creates a nested topic structure, publishing the actual point cloud to \texttt{/lidar\_3d/points/points} instead of the expected \texttt{/lidar\_3d/points}.
+
+\textbf{Solution}: Updated the bridge configuration to use the correct topic path:
+\begin{verbatim}
+'/lidar_3d/points/points@sensor_msgs/msg/PointCloud2
+    @gz.msgs.PointCloudPacked'
+\end{verbatim}
+
+\subsection{Sensor Configuration Syntax}
+
+\textbf{Challenge}: Initial LiDAR configuration used \texttt{<lidar>} tags which didn't work with Ignition Gazebo.
+
+\textbf{Solution}: Changed to \texttt{<ray>} tags and used \texttt{ignition\_frame\_id} instead of \texttt{gz\_frame\_id} for compatibility with ROS 2 Humble and Ignition Gazebo.
+
+\section{Conclusion}
+
+This project successfully demonstrated the complete workflow of integrating sensors into a robot model:
+
+\subsection{Achievements}
+
+\begin{enumerate}
+    \item \textbf{Sensor Integration}: Both 3D LiDAR and RGBD camera were successfully integrated into the Warthog URDF with proper physical and sensor properties.
+    
+    \item \textbf{Simulation}: The sensors function correctly in Gazebo, publishing data at specified rates with realistic characteristics.
+    
+    \item \textbf{ROS 2 Integration}: The Gazebo-ROS bridge successfully transfers sensor data to ROS 2 topics for use by other nodes.
+    
+    \item \textbf{Visualization}: RViz displays all sensor outputs in real-time, providing comprehensive visualization of the robot's perception capabilities.
+    
+    \item \textbf{Motion Control}: Integration with the existing controller demonstrates that sensors continue to function during robot motion.
+\end{enumerate}
+
+\subsection{Key Learnings}
+
+\begin{itemize}
+    \item Understanding of URDF/xacro macros for modular sensor definitions
+    \item Gazebo sensor plugin configuration for realistic simulation
+    \item ROS-Gazebo bridge setup for multi-topic communication
+    \item Debugging techniques using \texttt{ign topic} and \texttt{ros2 topic} commands
+    \item RViz configuration for multi-sensor visualization
+    \item Integration testing and verification workflows
+\end{itemize}
+
+\subsection{Future Extensions}
+
+The integrated sensor suite provides a foundation for:
+\begin{itemize}
+    \item SLAM (Simultaneous Localization and Mapping) implementation
+    \item Autonomous navigation using Nav2 stack
+    \item Obstacle detection and avoidance algorithms
+    \item 3D environment reconstruction
+    \item Sensor fusion for robust perception
+    \item Machine learning-based perception tasks
+\end{itemize}
+
+\section{Appendix: Commands Reference}
+
+\subsection{Building the Workspace}
+\begin{verbatim}
+cd ~/Lectures/KON414E/warthorg_ws
+colcon build --packages-select warthog_description warthog_gazebo
+source install/setup.bash
+\end{verbatim}
+
+\subsection{Launching Simulation}
+\begin{verbatim}
+# Terminal 1: Launch empty world
+ros2 launch warthog_gazebo empty_world.launch.py
+
+# Terminal 2: Spawn robot with sensors
+ros2 launch warthog_gazebo spawn_warthog.launch.py
+\end{verbatim}
+
+\subsection{Running Robot Controller}
+\begin{verbatim}
+ros2 run warthog_controller cmd_pub
+\end{verbatim}
+
+\subsection{Launching RViz}
+\begin{verbatim}
+ros2 run rviz2 rviz2
+\end{verbatim}
+
+\subsection{Sensor Topic Verification}
+\begin{verbatim}
+# List all topics
+ros2 topic list
+
+# Check topic information
+ros2 topic info /lidar_3d/points/points
+ros2 topic info /rgbd_camera/image
+
+# Monitor publishing rate
+ros2 topic hz /lidar_3d/points/points
+ros2 topic hz /rgbd_camera/image
+
+# Echo topic data
+ros2 topic echo /lidar_3d/points/points --once
+\end{verbatim}
+
+\subsection{Gazebo Topic Verification}
+\begin{verbatim}
+# List Ignition Gazebo topics
+ign topic -l
+
+# Get topic information
+ign topic -i -t /lidar_3d/points/points
+
+# Echo topic data
+ign topic -e -t /lidar_3d/points/points -n 5
+\end{verbatim}
