@@ -110,18 +110,18 @@ def generate_launch_description():
     )
     
     # Warthog controller node (from Homework 1)
-    controller_node = TimerAction(
-        period=3.0,
-        actions=[
-            Node(
-                package='warthog_controller',
-                executable='cmd_pub',
-                name='warthog_controller',
-                output='screen',
-                parameters=[{'use_sim_time': False}]
-            )
-        ]
-    )
+    #controller_node = TimerAction(
+    #    period=3.0,
+    #    actions=[
+    #        Node(
+    #            package='warthog_controller',
+    #            executable='cmd_pub',
+    #            name='warthog_controller',
+    #            output='screen',
+    #            parameters=[{'use_sim_time': False}]
+    #        )
+    #    ]
+    #)
     
     # RViz configuration file path
     rviz_config_file = PathJoinSubstitution([
@@ -159,7 +159,7 @@ def generate_launch_description():
         spawn_warthog,
         
         # Controller from Homework 1 - delayed to allow robot to spawn
-        controller_node,
+        #controller_node,
         
         # Visualization
         TimerAction(
