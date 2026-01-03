@@ -123,6 +123,11 @@ def generate_launch_description():
             '/odom@nav_msgs/msg/Odometry@gz.msgs.Odometry',
             '/imu/data@sensor_msgs/msg/Imu@gz.msgs.IMU',
             '/clock@rosgraph_msgs/msg/Clock@gz.msgs.Clock',
+            '/lidar_3d/points/points@sensor_msgs/msg/PointCloud2@gz.msgs.PointCloudPacked',
+            '/rgbd_camera/image@sensor_msgs/msg/Image@gz.msgs.Image',
+            '/rgbd_camera/depth_image@sensor_msgs/msg/Image@gz.msgs.Image',
+            '/rgbd_camera/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo',
+            '/rgbd_camera/points@sensor_msgs/msg/PointCloud2@gz.msgs.PointCloudPacked',
         ],
         parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}]
     )
@@ -136,6 +141,24 @@ def generate_launch_description():
         parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}]
     )
     
+    # Static transform publishers to remap Gazebo sensor frames to URDF frames
+    # Gazebo creates frames like "warthog/base_link/lidar_3d_sensor" but RViz expects "lidar_3d_link"
+    lidar_frame_remap = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='lidar_frame_publisher',
+        arguments=['0', '0', '0', '0', '0', '0', 'lidar_3d_link', 'warthog/base_link/lidar_3d_sensor'],
+        parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}]
+    )
+    
+    camera_frame_remap = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='camera_frame_publisher',
+        arguments=['0', '0', '0', '0', '0', '0', 'rgbd_camera_optical_frame', 'warthog/base_link/rgbd_camera_sensor'],
+        parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}]
+    )
+    
     return LaunchDescription([
         config_arg,
         x_arg,
@@ -146,5 +169,7 @@ def generate_launch_description():
         robot_state_publisher,
         spawn_entity,
         ros_gz_bridge,
-        odom_to_tf
+        odom_to_tf,
+        lidar_frame_remap,
+        camera_frame_remap
     ])
