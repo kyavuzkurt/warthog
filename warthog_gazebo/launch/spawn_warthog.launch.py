@@ -121,6 +121,7 @@ def generate_launch_description():
         arguments=[
             '/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist',
             '/odom@nav_msgs/msg/Odometry[gz.msgs.Odometry',
+            '/joint_states@sensor_msgs/msg/JointState[gz.msgs.Model',
             '/imu/data@sensor_msgs/msg/Imu[gz.msgs.IMU',
             '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
             '/lidar_3d/points/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked',
@@ -141,22 +142,16 @@ def generate_launch_description():
         parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}]
     )
     
-    # Static transform publishers to remap Gazebo sensor frames to URDF frames
-    # Gazebo creates frames like "warthog/base_link/lidar_3d_sensor" but RViz expects "lidar_3d_link"
-    lidar_frame_remap = Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        name='lidar_frame_publisher',
-        arguments=['0', '0', '0', '0', '0', '0', 'lidar_3d_link', 'warthog/base_link/lidar_3d_sensor'],
-        parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}]
-    )
-    
-    camera_frame_remap = Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        name='camera_frame_publisher',
-        arguments=['0', '0', '0', '0', '0', '0', 'rgbd_camera_optical_frame', 'warthog/base_link/rgbd_camera_sensor'],
-        parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}]
+    # Camera frame transformer for correct ROS coordinate convention
+    camera_frame_transformer = Node(
+        package='warthog_controller',
+        executable='camera_frame_transformer',
+        name='camera_frame_transformer',
+        output='screen',
+        parameters=[{
+            'camera_prefix': 'rgbd_camera',
+            'use_sim_time': LaunchConfiguration('use_sim_time')
+        }]
     )
     
     return LaunchDescription([
@@ -170,6 +165,5 @@ def generate_launch_description():
         spawn_entity,
         ros_gz_bridge,
         odom_to_tf,
-        lidar_frame_remap,
-        camera_frame_remap
+        camera_frame_transformer
     ])

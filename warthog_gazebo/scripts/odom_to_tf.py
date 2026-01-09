@@ -25,15 +25,21 @@ class OdomToTF(Node):
         )
         
         self.get_logger().info('Odometry to TF broadcaster started')
+        self.get_logger().info(f'Using sim time: {self.get_parameter("use_sim_time").value}')
     
     def odom_callback(self, msg):
         """Broadcast TF transform from odometry message."""
         t = TransformStamped()
         
-        # Header
-        t.header.stamp = msg.header.stamp
-        t.header.frame_id = msg.header.frame_id
-        t.child_frame_id = msg.child_frame_id
+        # Use current time if message timestamp is zero (Gazebo issue)
+        if msg.header.stamp.sec == 0 and msg.header.stamp.nanosec == 0:
+            t.header.stamp = self.get_clock().now().to_msg()
+        else:
+            t.header.stamp = msg.header.stamp
+        
+        # Set frame IDs explicitly to ensure they're correct
+        t.header.frame_id = 'odom'
+        t.child_frame_id = 'base_link'
         
         # Translation
         t.transform.translation.x = msg.pose.pose.position.x

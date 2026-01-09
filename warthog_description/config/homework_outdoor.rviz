@@ -88,6 +88,10 @@ Visualization Manager:
           Value: true
         diff_link:
           Value: true
+        front_left_wheel_link:
+          Value: true
+        front_right_wheel_link:
+          Value: true
         imu_link:
           Value: true
         left_diff_unit_antenna_link:
@@ -103,6 +107,10 @@ Visualization Manager:
         lidar_3d_link:
           Value: true
         odom:
+          Value: true
+        rear_left_wheel_link:
+          Value: true
+        rear_right_wheel_link:
           Value: true
         rgbd_camera_link:
           Value: true
@@ -122,16 +130,30 @@ Visualization Manager:
           Value: true
         top_chassis_link:
           Value: true
-        warthog/base_link/lidar_3d_sensor:
-          Value: true
-        warthog/base_link/rgbd_camera_sensor:
-          Value: true
       Marker Scale: 0.5
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: false
       Tree:
+        left_diff_unit_link:
+          front_left_wheel_link:
+            {}
+          left_diff_unit_antenna_link:
+            {}
+          left_diff_unit_buttons_link:
+            {}
+          left_diff_unit_headlight_link:
+            {}
+          left_diff_unit_taillight_link:
+            {}
+          lidar_3d_link:
+            {}
+          rear_left_wheel_link:
+            {}
+          rgbd_camera_link:
+            rgbd_camera_optical_frame:
+              {}
         odom:
           base_link:
             chassis_link:
@@ -139,14 +161,23 @@ Visualization Manager:
                 {}
               imu_link:
                 {}
+              right_diff_unit_link:
+                front_right_wheel_link:
+                  {}
+                rear_right_wheel_link:
+                  {}
+                right_diff_unit_antenna_link:
+                  {}
+                right_diff_unit_buttons_link:
+                  {}
+                right_diff_unit_estop_antenna_link:
+                  {}
+                right_diff_unit_headlight_link:
+                  {}
+                right_diff_unit_taillight_link:
+                  {}
               top_chassis_link:
-                lidar_3d_link:
-                  warthog/base_link/lidar_3d_sensor:
-                    {}
-                rgbd_camera_link:
-                  rgbd_camera_optical_frame:
-                    warthog/base_link/rgbd_camera_sensor:
-                      {}
+                {}
       Update Interval: 0
       Value: true
     - Angle Tolerance: 0.10000000149011612
@@ -191,8 +222,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 13.986637115478516
-        Min Value: 0.12114977836608887
+        Max Value: 9.234576225280762
+        Min Value: -0.46889597177505493
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -260,7 +291,7 @@ Visualization Manager:
       Color Transformer: RGB8
       Color Transport Hint: raw
       Decay Time: 0
-      Depth Map Topic: /rgbd_camera/depth_image
+      Depth Map Topic: /rgbd_camera/depth_image_corrected
       Depth Map Transport Hint: raw
       Enabled: true
       Invert Rainbow: false
@@ -328,7 +359,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 7.363454341888428
+      Distance: 11.224800109863281
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -343,10 +374,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.46999919414520264
+      Pitch: 0.6799988150596619
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 2.7750024795532227
+      Yaw: 3.4700090885162354
     Saved: ~
 Window Geometry:
   Camera:

@@ -41,6 +41,7 @@
       <sensor name="${prefix}_sensor" type="gpu_lidar">
         <topic>${prefix}/points</topic>
         <update_rate>10</update_rate>
+        <gz_frame_id>${prefix}_link</gz_frame_id>
         <ray>
           <scan>
             <horizontal>

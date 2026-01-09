@@ -86,7 +86,7 @@ def generate_launch_description():
         remappings=[
             ('rgb/image', '/rgbd_camera/image'),
             ('rgb/camera_info', '/rgbd_camera/camera_info'),
-            ('depth/image', '/rgbd_camera/depth_image'),
+            ('depth/image', '/rgbd_camera/depth_image_corrected'),
             ('scan_cloud', '/lidar_3d/points/points'),
             ('odom', '/odom'),
             ('imu', '/imu/data'),
@@ -114,7 +114,7 @@ def generate_launch_description():
         remappings=[
             ('rgb/image', '/rgbd_camera/image'),
             ('rgb/camera_info', '/rgbd_camera/camera_info'),
-            ('depth/image', '/rgbd_camera/points'),
+            ('depth/image', '/rgbd_camera/depth_image_corrected'),
             ('scan_cloud', '/lidar_3d/points/points'),
             ('odom', '/odom'),
             ('imu', '/imu/data'),

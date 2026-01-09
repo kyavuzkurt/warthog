@@ -1,4 +1,6 @@
 from setuptools import find_packages, setup
+import os
+from glob import glob
 
 package_name = 'warthog_controller'
 
@@ -10,6 +12,7 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        (os.path.join('share', package_name, 'launch'), glob('launch/*.launch.py')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -28,6 +31,7 @@ setup(
             'icp_calibration = warthog_controller.icp_calibration:main',
             'map_comparison = warthog_controller.map_comparison:main',
             'calibrated_lidar_tf = warthog_controller.calibrated_lidar_tf:main',
+            'camera_frame_transformer = warthog_controller.camera_frame_transformer:main',
         ],
     },
 )

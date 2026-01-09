@@ -62,19 +62,22 @@
   <!-- 3D LiDAR Sensor -->
   <xacro:include filename="accessories/lidar_3d.urdf.xacro" />
   <xacro:if value="$(optenv WARTHOG_LIDAR_3D 1)">
-    <xacro:lidar_3d prefix="lidar_3d" parent_link="top_chassis_link">
-      <!-- Intentional ±5% error in pose for sensor calibration testing -->
-      <!-- Original: xyz="0.0 0.0 0.1" rpy="0 0 0" -->
-      <origin xyz="$(optenv WARTHOG_LIDAR_3D_OFFSET 0.0 0.005 0.105)" 
-              rpy="$(optenv WARTHOG_LIDAR_3D_RPY 0.0262 -0.0175 0.0349)" />
+    <xacro:lidar_3d prefix="lidar_3d" parent_link="left_diff_unit_link">
+      <!-- Attached to left diff unit where antenna was located -->
+      <!-- Antenna position: xyz="-0.096 0.431 0.6635" (from warthog.urdf.xacro line 284) -->
+      <origin xyz="$(optenv WARTHOG_LIDAR_3D_OFFSET -0.2 0 0.540)" 
+              rpy="$(optenv WARTHOG_LIDAR_3D_RPY 0 0 0)" />
     </xacro:lidar_3d>
   </xacro:if>
 
   <!-- RGBD Camera -->
   <xacro:include filename="accessories/rgbd_camera.urdf.xacro" />
   <xacro:if value="$(optenv WARTHOG_RGBD_CAMERA 1)">
-    <xacro:rgbd_camera prefix="rgbd_camera" parent_link="top_chassis_link">
-      <origin xyz="$(optenv WARTHOG_RGBD_CAMERA_OFFSET 0.3 0.0 0.05)" 
+    <xacro:rgbd_camera prefix="rgbd_camera" parent_link="left_diff_unit_link">
+      <!-- Attached to left diff unit where buttons were located -->
+      <!-- Buttons position: xyz="0.0395 0.4315 0.520" (from warthog.urdf.xacro line 255) -->
+      <!-- Rotate camera -90 degrees around z-axis to face forward -->
+      <origin xyz="$(optenv WARTHOG_RGBD_CAMERA_OFFSET 0.3 0 0.530)" 
               rpy="0 0 0" />
     </xacro:rgbd_camera>
   </xacro:if>
