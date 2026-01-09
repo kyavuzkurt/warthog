@@ -41,7 +41,7 @@
 
     <!-- Optical frame joint (ROS standard: x=right, y=down, z=forward) -->
     <joint name="${prefix}_optical_joint" type="fixed">
-      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/> 
       <parent link="${prefix}_link"/>
       <child link="${prefix}_optical_frame"/>
     </joint>

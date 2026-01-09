@@ -25,6 +25,9 @@ setup(
     entry_points={
         'console_scripts': [
             'cmd_pub = warthog_controller.cmd_pub:main',
+            'icp_calibration = warthog_controller.icp_calibration:main',
+            'map_comparison = warthog_controller.map_comparison:main',
+            'calibrated_lidar_tf = warthog_controller.calibrated_lidar_tf:main',
         ],
     },
 )

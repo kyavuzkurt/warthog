@@ -1,0 +1,10 @@
+# Python dependencies for LiDAR calibration and 3D mapping project
+# Install with: source venv/bin/activate && pip install -r requirements.txt
+
+open3d>=0.18.0          # 3D point cloud processing and ICP calibration
+numpy>=1.24.0           # Numerical computing
+opencv-python>=4.8.0    # Image processing
+scikit-image>=0.21.0    # SSIM and image metrics
+matplotlib>=3.7.0       # Plotting and visualization
+pandas>=2.0.0           # Data analysis and CSV handling
+
